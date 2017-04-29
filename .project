@@ -1,0 +1,24 @@
+# Gambas Project File 3.0
+# Compiled with Gambas 3.5.0
+Title=Murder Mystery Facilitator
+Startup=FMain
+Version=0.0.9
+Component=gb.image
+Component=gb.qt4
+Component=gb.form
+Component=gb.desktop
+Component=gb.settings
+Description="A facilitator for the Murder Mystery game."
+Authors="SteveDee"
+TabSize=2
+ExecPath=/home/steve/Gambas/MurderMystery/exe/MurderMystery.gambas
+Maintainer=steveDee
+Address=steve@steve-laptop
+Url=http://captainbodgit.blogspot.co.uk/
+License=General Public Licence
+PackageName=murdermystery-0.0.9
+Packager=1
+Systems=debian
+Menus=debian:"Games/Strategy"
+Categories=debian:"Amusement;Game;StrategyGame"
+Groups=debian:"games"

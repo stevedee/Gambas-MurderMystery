@@ -1,0 +1,6 @@
+' Gambas module file
+
+Public Const STAGE_1 As String = "Stage 1: Please enter the name of each player"
+
+Public Const STAGE_2 As String = "Stage 2: Select your name from the"
+Public Const STAGE_2A As String = "list to discover your role!"

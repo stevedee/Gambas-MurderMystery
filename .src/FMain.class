@@ -1,0 +1,259 @@
+' Gambas class file
+
+Public intPlayerNumber As Integer   'unique player number
+'Public intNumberOfPlayers As Integer   'total players
+Public lngGameCounter As Long
+Public strHelpFile As String        'path & name of Help file
+' [GB2:ARRD] PUBLIC strPlayerName AS String[15]
+Public strPlayerName As New String[20]
+' [GB2:ARRD] PUBLIC strPlayerPassword AS String[15]
+Public strPlayerPassword As New String[20]
+' [GB2:ARRD] PUBLIC strPlayerRole AS String[15]
+Public strPlayerRole As New String[20]
+Public Const MAX_PLAYERS As Integer = 20
+Public Const KILL1 As String = "KILLER 1"
+Public Const KILL2 As String = "KILLER 2"
+Public Const WITNESS As String = "the WITNESS"
+Public Const OTHER As String = "INNOCENT"
+
+Public Sub _new()
+
+End
+
+Public Sub Form_Open()
+Dim sOutput As String
+
+  Exec ["pgrep", "-f", "-l", "MurderMystery.gambas"] Wait To sOutput
+  
+  If Split(Trim$(sOutput), gb.newLine).Count > 1 Then
+    'Allready running
+    Quit
+  Else
+    strHelpFile = Application.Path & "/MMF Help.html"
+    Me.x = 200
+    Me.y = 100
+    RunStage1()
+    PlayIntro
+    Me.Hide
+    tmr_Intro.Start()
+  Endif
+End
+
+Public Function EnterPlayer() As Boolean
+
+  If intPlayerNumber < MAX_PLAYERS Then
+  '   IF Len(txtName.Text) > 1 AND Len(txtPassword.Text) > 1 THEN
+    If Len(txtName.Text) > 1 Then
+      strPlayerName[intPlayerNumber] = txtName.Text
+      strPlayerPassword[intPlayerNumber] = txtPassword.Text
+      lstPlayers.Add(txtName.Text)
+      txtPassword.Clear()
+      txtName.Clear
+      Inc intPlayerNumber
+      lblNoPlayers.Text = CStr(intPlayerNumber) & "/" & CStr(MAX_PLAYERS) & " max"
+      txtName.SetFocus()
+    Else
+      Message.Warning("Name & password must have at least 2 characters!", "OK")
+    Endif
+  Else
+    Message.Warning(CStr(MAX_PLAYERS) & " players maximum", "OK")
+  Endif
+End
+
+Public Function SelectRoles() As Boolean
+Dim index As Integer
+Dim iPlayer As Integer
+
+  For index = 0 To intPlayerNumber - 1
+    strPlayerRole[index] = OTHER
+  Next
+  Do
+    iPlayer = CInt(Round(Rnd(intPlayerNumber)))
+    If strPlayerRole[iPlayer] = OTHER Then
+      strPlayerRole[iPlayer] = WITNESS
+      Break
+    Endif
+  Loop
+  For index = 1 To 2
+    Do
+      iPlayer = CInt(Round(Rnd(intPlayerNumber)))
+      If strPlayerRole[iPlayer] = OTHER Then
+        strPlayerRole[iPlayer] = "KILLER " & index
+        Break
+      Endif
+    Loop
+  Next
+
+End
+
+Public Function FindKiller(intNumber As Integer) As String
+Dim index As Integer
+
+  For index = 0 To intPlayerNumber - 1
+    If strPlayerRole[index] = "KILLER " & intNumber Then
+      Break
+    Endif
+  Next
+  Return strPlayerName[index]
+End
+
+Public Function FindOtherKiller(strMe As String) As String
+Dim index As Integer
+
+  For index = 0 To intPlayerNumber - 1
+    If InStr(strPlayerRole[index], "KILL") > 0 And strPlayerName[index] <> strMe Then
+      Break
+    Endif
+  Next
+  Return strPlayerName[index]
+End
+
+Public Function FindWitness() As String
+Dim index As Integer
+
+  For index = 0 To intPlayerNumber - 1
+    If strPlayerRole[index] = WITNESS Then
+      Break
+    Endif
+  Next
+  Return strPlayerName[index]
+End
+
+Public Sub btnEnter_KeyPress()
+'   EnterPlayer()
+End
+
+
+Public Sub btnEnter_Click()
+
+  EnterPlayer()
+End
+
+Public Sub btnOK_Click()
+Dim index As Integer
+Dim iKiller As Integer
+Dim iWitness As Integer
+Dim iOthers As Integer
+Dim intReply As Integer
+
+  If intPlayerNumber < 4 Then
+    Message.Warning("Hey Nobby Nomates! You really don't have enough mates to play this game!")
+  Else
+    SelectRoles()
+    For index = 0 To intPlayerNumber - 1
+      If strPlayerRole[index] = WITNESS Then
+        Inc iWitness
+      Endif
+      If InStr(strPlayerRole[index], "KILL") > 0 Then
+        Inc iKiller
+      Endif
+    Next
+    Message.Info("OK we have; " & iWitness & " witness, " & iKiller & " Killers, and " &
+                CStr(intPlayerNumber - iKiller - iWitness) & " other players", "OK")
+    If intReply = 0 Then
+      RunStage2()
+    Endif
+  Endif
+End
+
+Public Function RunStage1() As Boolean
+  
+  lblInstructions.Text = General.STAGE_1
+  Inc lngGameCounter
+  lblGame.Text = "Game #" & lngGameCounter
+  lblName.Visible = True
+  txtName.Visible = True
+  btnEnter.Visible = True
+  btnOK.Visible = True
+  btnRoleCheck.Visible = False
+  lstPlayers.Enabled = False
+  txtName.SetFocus()
+  
+End
+
+Public Function RunStage2() As Boolean
+  
+  lblInstructions.Text = General.STAGE_2 & Chr(10) & General.STAGE_2A
+  
+  lblName.Visible = False
+  txtName.Visible = False
+  btnEnter.Visible = False
+  btnOK.Visible = False
+  btnRoleCheck.Visible = True
+  lstPlayers.Enabled = True
+  
+End
+
+Public Sub btnRoleCheck_Click()
+Dim intReply As Integer
+Dim strMessage As String
+Dim strAnOther As String
+
+  If lstPlayers.Index >= 0 Then
+    Select Case strPlayerRole[lstPlayers.Index]
+      Case KILL1
+      strAnOther = FindOtherKiller(strPlayerName[lstPlayers.Index])
+      strMessage = FindWitness()
+      strMessage = "You and " & strAnOther & " are the killers." '& Chr(10) & "But " & strMessage & " saw only you do the deadly deed!"
+      Case KILL2
+      strAnOther = FindOtherKiller(strPlayerName[lstPlayers.Index])
+      strMessage = "You and " & strAnOther & " are the killers"
+      Case WITNESS
+      strAnOther = FindKiller(1)
+      strMessage = "You are the witness." & Chr(10) & "You saw " & strAnOther & " murder the victim."
+      Case OTHER
+      strMessage = "You are innocent." & Chr(10) & "Please stare at this for 5 seconds to pretend you have as much to read as the others!"
+      Case Else
+      'error
+    
+    End Select
+    intReply = Message.Question("Are you " & lstPlayers.Current.Text & "?", "NO", "YES")
+    If intReply = 2 Then
+      Message.Info(strMessage, "OK")
+    Endif
+  Else
+    Message.Warning("Please select a player from the list!")
+  Endif
+End
+
+Public Sub mnuNewGame_Click()
+
+  RunStage1()
+  Message.Info("***** All Player Roles Have Been Reset *****", "OK")
+End
+
+Public Sub mnuExit_Click()
+
+  Quit
+
+End
+
+Public Sub mnuAbout_Click()
+
+  Message.Info("Murder Mystery Facilitator by Steve Davis" & Chr(10) & "Program Version: " & Application.Version & "  for Linux", "OK")
+
+End
+
+Public Sub mnuHowTo_Click()
+
+  'need to load an HTML file...
+  PlayIntro
+
+End
+
+Public Function PlayIntro() As Boolean
+  
+  'need to load an HTML file...
+  If Exist(strHelpFile) Then
+    Desktop.Open(strHelpFile)
+    Return True
+  Endif
+End
+
+
+Public Sub tmr_Intro_Timer()
+
+  tmr_Intro.Stop()
+  Me.Show
+
+End

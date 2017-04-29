@@ -1,0 +1,11 @@
+* Tue Dec 24 2013 steveDee <steve@steve-laptop> 0.0.9
+- Rebuild
+
+* Tue Dec 24 2013 steveDee <steve@steve-laptop> 0.0.8
+- Changed icon.
+- Stretched label
+
+* Tue Dec 24 2013 steveDee <steve@steve-laptop> 0.0.8
+- Rebuilt for Gambas 3.
+- Now 20 players max.
+
